@@ -1,13 +1,10 @@
 package shelly
 
 import (
-	"errors"
-	"io"
 	"net/url"
 
 	"github.com/MeroFuruya/shelly-analytics/core/logging"
 	"github.com/gorilla/websocket"
-	"github.com/rs/zerolog"
 )
 
 var SHELLY_URL = url.URL{
@@ -15,103 +12,43 @@ var SHELLY_URL = url.URL{
 	Host:   "info-board.shelly.cloud",
 }
 
-type ShellyOptions struct {
-	ReconnectEnabled bool
-	ReconnectTryMax  int
-	OnDataReceived   func(r io.Reader)
-}
+var logger = logging.GetLogger("shelly.client")
 
-type ShellyClient struct {
-	Conn             *websocket.Conn
-	OnDataReceived   func(r io.Reader)
-	Logger           zerolog.Logger
-	Done             chan struct{}
-	ReconnectEnabled bool
-	ReconnectTry     int
-	ReconnectTryMax  int
-}
-
-func NewShellyClient(options ShellyOptions) *ShellyClient {
-	return &ShellyClient{
-		ReconnectEnabled: options.ReconnectEnabled,
-		ReconnectTryMax:  options.ReconnectTryMax,
-		Logger:           logging.GetLogger("shelly"),
-		OnDataReceived:   options.OnDataReceived,
+func channelIsClosed(ch <-chan []byte) bool {
+	select {
+	case <-ch:
+		return true
+	default:
 	}
+	return false
 }
 
-func (c *ShellyClient) Open() error {
-	c.Logger.Info().
-		Str("url", SHELLY_URL.String()).
-		Msg("Connecting to Shelly")
-
+func newConn() (*websocket.Conn, error) {
 	conn, _, err := websocket.DefaultDialer.Dial(SHELLY_URL.String(), nil)
-	if err != nil {
-		c.Logger.Error().Err(err).Msg("Failed to connect to Shelly")
-		return err
-	}
-	c.Conn = conn
-
-	c.Done = make(chan struct{})
-
-	return nil
+	return conn, err
 }
 
-func (c *ShellyClient) Listen() error {
+func Run(data chan []byte) {
 	for {
-		if err := c.receive(); err != nil {
-			c.Logger.Error().Err(err).Msg("Failed to receive data from Shelly")
-			if c.ReconnectEnabled {
-				if err := c.reconnect(); err != nil {
-					return err
-				}
-			}
+		if channelIsClosed(data) {
+			logger.Debug().Msg("Data channel is closed, exiting")
+			return
 		}
-	}
-}
 
-func (c *ShellyClient) OpenAndListen() error {
-	if err := c.Open(); err != nil {
-		return err
-	}
-	return c.Listen()
-}
+		conn, err := newConn()
+		if err != nil {
+			logger.Error().Err(err).Msg("Failed to connect to Shelly")
+			return
+		}
 
-func (c *ShellyClient) receive() error {
-	c.Logger.Info().Msg("Listening for messages from Shelly")
-	defer close(c.Done)
-	for {
-		select {
-		case <-c.Done:
-			return nil
-		default:
-			_, r, err := c.Conn.NextReader()
+		for {
+			_, message, err := conn.ReadMessage()
 			if err != nil {
-				c.Logger.Error().Err(err).Msg("Failed to read message from Shelly")
-				return err
+				logger.Error().Err(err).Msg("Failed to read message")
+				break
 			}
-			if c.OnDataReceived != nil {
-				c.OnDataReceived(r)
-			}
+
+			data <- message
 		}
-	}
-}
-
-func (c *ShellyClient) reconnect() error {
-	c.Logger.Info().Msg("Reconnecting to Shelly")
-	c.ReconnectTry++
-	if c.ReconnectTry > c.ReconnectTryMax {
-		c.Logger.Error().Msg("Failed to reconnect to Shelly: max tries reached")
-		return errors.New("max tries reached")
-	}
-	c.Close()
-	c.Open()
-	return nil
-}
-
-func (c *ShellyClient) Close() {
-	close(c.Done)
-	if c.Conn != nil {
-		c.Conn.Close()
 	}
 }

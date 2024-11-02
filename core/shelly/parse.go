@@ -1,9 +1,9 @@
 package shelly
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
-	"io"
 	"regexp"
 	"strconv"
 	"time"
@@ -19,9 +19,9 @@ func ParseInt64(value string) (int64, error) {
 	return strconv.ParseInt(value, 10, 64)
 }
 
-func Parse(r io.Reader) (MetricBatch, error) {
+func Parse(v []byte) (MetricBatch, error) {
 	logger := logging.GetLogger("shelly.parser")
-	decoder := json.NewDecoder(r)
+	decoder := json.NewDecoder(bytes.NewReader(v))
 	data := make(map[string]json.RawMessage)
 	batch := MetricBatch{}
 

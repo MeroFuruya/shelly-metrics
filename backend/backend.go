@@ -2,8 +2,6 @@ package main
 
 import (
 	"context"
-	"io"
-	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/rs/zerolog/log"
@@ -48,31 +46,17 @@ func main() {
 	result.Close()
 
 	batch = pgx.Batch{}
-	shelly.InsertMetric(shelly.NewDeviceMetric{
-		Type:      "SHSW-1",
-		Latitude:  0.0,
-		Longitude: 0.0,
-		Display:   "Shelly 1",
-		Friendly:  "NW, Middle of the earth",
-		Family:    "Shelly",
-		Timestamp: time.Now(),
-	}, &batch)
 	result = conn.SendBatch(context.Background(), &batch)
 	result.Close()
 
-	c := shelly.NewShellyClient(shelly.ShellyOptions{
-		ReconnectEnabled: true,
-		ReconnectTryMax:  5,
-		OnDataReceived: func(r io.Reader) {
-			if batch, err := shelly.Parse(r); err != nil {
-				logger.Error().Err(err).Msg("Failed to parse data")
-			} else {
-				result := conn.SendBatch(context.Background(), &batch.Batch)
-				result.Close()
-			}
-		},
-	})
-	c.Open()
-	c.Listen()
-	c.Close()
+	data := make(chan []byte, 100)
+	go shelly.Run(data)
+	for v := range data {
+		if batch, err := shelly.Parse(v); err != nil {
+			logger.Error().Err(err).Msg("Failed to parse data")
+		} else {
+			result := conn.SendBatch(context.Background(), &batch.Batch)
+			result.Close()
+		}
+	}
 }
