@@ -1,4 +1,4 @@
-# shelly-analytics
+# shelly-metrics
 
 I found a public api endpoint that returns some interesting data: `wss://info-board.shelly.cloud/`.
 

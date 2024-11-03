@@ -3,7 +3,7 @@ package shelly
 import (
 	"net/url"
 
-	"github.com/MeroFuruya/shelly-analytics/core/logging"
+	"github.com/MeroFuruya/shelly-metrics/core/logging"
 	"github.com/gorilla/websocket"
 )
 

@@ -1,4 +1,4 @@
-module github.com/MeroFuruya/shelly-analytics
+module github.com/MeroFuruya/shelly-metrics
 
 go 1.22.4
 

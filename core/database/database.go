@@ -3,7 +3,7 @@ package database
 import (
 	"context"
 
-	"github.com/MeroFuruya/shelly-analytics/core/logging"
+	"github.com/MeroFuruya/shelly-metrics/core/logging"
 	"github.com/jackc/pgx/v5"
 )
 

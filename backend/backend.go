@@ -6,9 +6,9 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/rs/zerolog/log"
 
-	"github.com/MeroFuruya/shelly-analytics/core/database"
-	"github.com/MeroFuruya/shelly-analytics/core/logging"
-	"github.com/MeroFuruya/shelly-analytics/core/shelly"
+	"github.com/MeroFuruya/shelly-metrics/core/database"
+	"github.com/MeroFuruya/shelly-metrics/core/logging"
+	"github.com/MeroFuruya/shelly-metrics/core/shelly"
 	"github.com/joho/godotenv"
 )
 
@@ -24,7 +24,7 @@ func main() {
 
 	logger := logging.GetLogger("main")
 
-	logger.Debug().Msg("Starting Shelly Analytics")
+	logger.Debug().Msg("Starting shelly metrics")
 
 	err = database.InitConnection(context.TODO(), database.DatabaseConfig{
 		Host:     args.PostgresHost,

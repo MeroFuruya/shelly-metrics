@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/MeroFuruya/shelly-analytics/core/logging"
+	"github.com/MeroFuruya/shelly-metrics/core/logging"
 )
 
 func ParseTimestamp(timestamp string) (time.Time, error) {
