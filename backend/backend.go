@@ -26,13 +26,17 @@ func main() {
 
 	logger.Debug().Msg("Starting Shelly Analytics")
 
-	database.InitConnection(context.TODO(), database.DatabaseConfig{
+	err = database.InitConnection(context.TODO(), database.DatabaseConfig{
 		Host:     args.PostgresHost,
 		Port:     args.PostgresPort,
 		Database: args.PostgresDatabase,
 		User:     args.PostgresUser,
 		Password: args.PostgresPassword,
 	})
+	if err != nil {
+		logger.Error().Err(err).Msg("Failed to initialize database connection")
+		return
+	}
 
 	conn := database.GetConnection()
 
