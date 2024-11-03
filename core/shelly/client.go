@@ -12,30 +12,10 @@ var SHELLY_URL = url.URL{
 	Host:   "info-board.shelly.cloud",
 }
 
-var logger = logging.GetLogger("shelly.client")
-
-func channelIsClosed(ch <-chan []byte) bool {
-	select {
-	case <-ch:
-		return true
-	default:
-	}
-	return false
-}
-
-func newConn() (*websocket.Conn, error) {
-	conn, _, err := websocket.DefaultDialer.Dial(SHELLY_URL.String(), nil)
-	return conn, err
-}
-
-func Run(data chan []byte) {
+func Run(data chan<- []byte) {
+	var logger = logging.GetLogger("shelly.client")
 	for {
-		if channelIsClosed(data) {
-			logger.Debug().Msg("Data channel is closed, exiting")
-			return
-		}
-
-		conn, err := newConn()
+		conn, _, err := websocket.DefaultDialer.Dial(SHELLY_URL.String(), nil)
 		if err != nil {
 			logger.Error().Err(err).Msg("Failed to connect to Shelly")
 			return
